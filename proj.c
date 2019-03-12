@@ -1,8 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-/*vetor com entradas sendo estruturas de um vertice*/
-
 typedef struct vertex {
     int id;
     int colour;
@@ -16,6 +14,79 @@ typedef struct graph {
     int **matrix;
 }Graph;
 
+/*---------------------------------Testing functions-------------------------------------*/
+
+void printAdj(int * vector, int size); /*also used to print the max of each subgraph*/
+void printTable(Vertex **table, int N); /*prints the table of each vertex*/
+void printMatrix(int **matrix, int size);
+
+
+/*---------------------------------Graph functions--------------------------------------*/
+
+Graph * initialGraph(int N);
+int ** getMatrix(Graph* g);
+int getSize(Graph* g);
+
+
+/*---------------------------------Matrix functions--------------------------------------*/
+
+int ** initialMatrix(int n);
+void addValue(int line, int column, int ** matrix);
+void removeValue(int line, int column, int ** matrix);
+int valueCell(int line, int column, int ** matrix);
+
+/*--------------------------------Vertex functions---------------------------------------*/
+
+Vertex** initialTable(Graph* g);
+int * getAdj(int line, Graph* g);
+
+/*-----------------------------------DFS functions---------------------------------------*/
+
+void Dfs(Graph* g, int N);
+void DfsVisit(Vertex* v, Vertex** table, int *time, int *maxSubgraph, Graph* g);
+
+/*---------------------------------------------------------------------------------------*/
+
+int main(int argc, char **argv) {
+    int i, N, M;
+    int v1, v2;
+
+    scanf("%d", &N);/*number of routers*/ 
+    scanf("%d", &M); /*number of connections*/
+    Graph * g = initialGraph(N);
+    int ** matrix = getMatrix(g);
+
+    for(i = 0; i < M; i++){
+        scanf("%d %d", &v1, &v2);
+        addValue(v1, v2, matrix); /*guardar na estrutura*/
+    }
+
+    /*printMatrix(matrix, N);*/
+    /*printAdj(getAdj(1, g), N);*/
+    Dfs(g, N);
+}
+
+Graph * initialGraph(int N){
+    Graph* g = (Graph*)malloc(sizeof(Graph));
+    g->size = N;
+    g->matrix = initialMatrix(N);
+    
+    return g;
+}
+
+int ** initialMatrix(int N){
+    int i, j;
+    int **vector = (int**)malloc(N*sizeof(int*)); /*vetor de ponteiros*/
+
+    for(i=0; i < N; i++){
+        vector[i] = (int*)malloc(N*sizeof(int)); /*vetor para cada posicao do vetor de ponteiros*/
+        for(j=0; j < N; j++){
+            vector[i][j] = 0; /*meter tudo a zero*/
+        }
+    }
+    return vector;
+}
+
 int ** getMatrix(Graph* g){
     return g->matrix;
 }
@@ -24,25 +95,34 @@ int getSize(Graph* g){
     return g->size;
 }
 
-void printAdj(int * vector, int size){
-    int i,j;
-    for(i = 0; i < size; i++){
-        printf("%d ", vector[i]);
-    }
+void addValue(int line, int column, int ** matrix){
+    matrix[line-1][column-1] = 1;
+    matrix[column-1][line-1] = 1;
 }
 
-int * getAdj(int line, Graph* g){
-    int i;
-    int n = 0;
-    int size = getSize(g);
-    int *vectorAdj = (int*)malloc(sizeof (int) * size);
+void removeValue(int line, int column, int ** matrix){
+    matrix[line-1][column-1] = 0;
+    matrix[column-1][line-1] = 0;
+}
 
-    for(i=0;i<size; i++){
-        if(getMatrix(g)[line-1][i] == 1){
-            vectorAdj[n++] = i + 1;
+void Dfs(Graph* g, int N){
+    int i, maxSubgraph;
+    int n = 0;
+    int subgraphs = 0;
+    int *vectorMax = (int*)malloc(sizeof (int) * N);
+    Vertex **table = initialTable(g);
+    int time = 1;
+    for(i = 0; i < N; i++){
+        if(table[i]->colour == 0){
+            maxSubgraph = 0;
+            subgraphs++;
+            DfsVisit(table[i], table, &time, &maxSubgraph, g);
+            vectorMax[n++] = maxSubgraph; /*meter no vetor o valor*/
         }
     }
-    return vectorAdj;
+    printf("Numero de subgrafos: %d\n", subgraphs);
+    printTable(table, N);
+    printAdj(vectorMax, subgraphs);
 }
 
 Vertex** initialTable(Graph* g){
@@ -79,6 +159,20 @@ void DfsVisit(Vertex* v, Vertex** table, int *time, int *maxSubgraph, Graph* g){
 
 }
 
+int * getAdj(int line, Graph* g){
+    int i;
+    int n = 0;
+    int size = getSize(g);
+    int *vectorAdj = (int*)malloc(sizeof (int) * size);
+
+    for(i=0;i<size; i++){
+        if(getMatrix(g)[line-1][i] == 1){
+            vectorAdj[n++] = i + 1;
+        }
+    }
+    return vectorAdj;
+}
+
 void printTable(Vertex **table, int N){
     int i;
     for(i = 0; i < N; i++){
@@ -86,24 +180,11 @@ void printTable(Vertex **table, int N){
     }
 }
 
-void Dfs(Graph* g, int N){
-    int i, maxSubgraph;
-    int n = 0;
-    int subgraphs = 0;
-    int *vectorMax = (int*)malloc(sizeof (int) * N);
-    Vertex **table = initialTable(g);
-    int time = 1;
-    for(i = 0; i < N; i++){
-        if(table[i]->colour == 0){
-            maxSubgraph = 0;
-            subgraphs++;
-            DfsVisit(table[i], table, &time, &maxSubgraph, g);
-            vectorMax[n++] = maxSubgraph; /*meter no vetor o valor*/
-        }
+void printAdj(int * vector, int size){
+    int i,j;
+    for(i = 0; i < size; i++){
+        printf("%d ", vector[i]);
     }
-    printf("VALOR DO M: %d\n", subgraphs);
-    printTable(table, N);
-    printAdj(vectorMax, subgraphs);
 }
 
 void printMatrix(int ** matrix, int size){
@@ -116,63 +197,8 @@ void printMatrix(int ** matrix, int size){
     }
 }
 
-int ** initialMatrix(int N){
-    int i, j;
-    int **vector = (int**)malloc(N*sizeof(int*)); /*vetor de ponteiros*/
-
-    for(i=0; i < N; i++){
-        vector[i] = (int*)malloc(N*sizeof(int)); /*vetor para cada posicao do vetor de ponteiros*/
-        for(j=0; j < N; j++){
-            vector[i][j] = 0; /*meter tudo a zero*/
-        }
-    }
-    return vector;
-}
-
-
-Graph * initialGraph(int N){
-    Graph* g = (Graph*)malloc(sizeof(Graph));
-    g->size = N;
-    g->matrix = initialMatrix(N);
-    
-    return g;
-}
-
-void addValue(int line, int column, int ** matrix){
-    matrix[line-1][column-1] = 1;
-    matrix[column-1][line-1] = 1;
-}
-
-void removeValue(int line, int column, int ** matrix){
-    matrix[line-1][column-1] = 0;
-    matrix[column-1][line-1] = 0;
-}
-
-
 int valueCell(int line, int column, int ** matrix){
     return matrix[--line][--column];
 }
-
-
-int main(int argc, char **argv) {
-    int i, N, M;
-    int v1, v2;
-
-    scanf("%d", &N);/*numero de routers*/ 
-    scanf("%d", &M); /*numero de ligacoes*/
-    Graph * g = initialGraph(N);
-    int ** matrix = getMatrix(g);
-
-    for(i = 0; i < M; i++){
-        scanf("%d %d", &v1, &v2);
-        addValue(v1, v2, matrix);
-        /*guardar na estrutura*/
-    }
-
-    /*printMatrix(matrix, N);*/
-    /*printAdj(getAdj(1, g), N);*/
-    Dfs(g, N);
-}
-
 
 
