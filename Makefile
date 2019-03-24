@@ -1,5 +1,5 @@
-CC = gcc
-CFLAGS = -g Wall
-
+CC = g++
+CFLAGS = -std=c++11 -O3 -Wall -lm
 all:
-     gcc -o main main.c
+	g++ ${CFLAGS} -o proj list1.cpp
+
